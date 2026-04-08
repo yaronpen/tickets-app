@@ -107,8 +107,9 @@ function renderTickets() {
       <div class="card-meta">
         
         <span class="meta-user">
-          ${Object.keys(t.assigned_user || {}).length > 0
-            ? `👤 ${escapeHtml(t.assigned_user.name)}`
+        
+          ${t.assigned_user_name
+            ? `👤 ${escapeHtml(t.assigned_user_name)}`
             : '<span class="unassigned">⚠️ לא משויך</span>'
           }
         </span>
