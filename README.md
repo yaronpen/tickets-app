@@ -218,7 +218,7 @@ Additional complex queries live in the stats service (`stats-service/src/routes/
 
   Replaces running containers on docker-compose.
 
-  - Fargate means serverless containers — no EC2 instances to manage
+  - Fargate means serverless containers - no EC2 instances to manage
   - Each service (backend, stats-service) becomes an ECS Service with a Task Definition
   - Task definitions define the container image (from ECR), CPU/memory, environment variables, and port
   - ECS handles starting, stopping, and replacing unhealthy containers
@@ -281,13 +281,13 @@ Additional complex queries live in the stats service (`stats-service/src/routes/
   1. Push to main branch
   2. Build Docker images for backend and stats-service
   3. Push images to ECR
-  4. Update ECS services with the new image (rolling deployment — zero downtime)
+  4. Update ECS services with the new image (rolling deployment - zero downtime)
   5. Build React app and sync dist/ to S3
   6. Invalidate CloudFront cache
 
 
 
-## Part B — Code Improvement
+## Part B - Code Improvement
 
 ### Original code
 
@@ -304,9 +304,9 @@ public function getOpenTickets()
 
 1. Raw `DB::select()` instead of Eloquent ORM
 2. `SELECT *` fetches unnecessary columns
-3. Magic string `'open'` hardcoded — not centralized
+3. Magic string `'open'` hardcoded - not centralized
 4. No return type hint
-5. No pagination — risk of memory exhaustion on large datasets
+5. No pagination - risk of memory exhaustion on large datasets
 
 ### Improved code
 
@@ -342,3 +342,4 @@ public function getOpenTickets(): LengthAwarePaginator
 | Return type | None | `LengthAwarePaginator` |
 | Pagination | None | `paginate(25)` |
 | Ordering | None | `latest()` (newest first) |
+

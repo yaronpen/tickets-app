@@ -32,7 +32,6 @@ export default function TicketCard({ ticket: t, onEdit, onStatusChange, onDelete
 
       <div className="card-meta">
         <span className="meta-user">
-          {t.assigned_user_name}
           {t.assigned_user_name
             ? `👤 ${t.assigned_user_name}`
             : <span className="unassigned">⚠️ לא משויך</span>
