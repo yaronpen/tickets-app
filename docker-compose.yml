@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  # ─── Microsoft SQL Server ───────────────────────────────────────────────────
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: tickets_sqlserver
+    environment:
+      ACCEPT_EULA: "Y"
+      MSSQL_SA_PASSWORD: "YourStrong@Passw0rd"
+      MSSQL_PID: "Developer"
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "YourStrong@Passw0rd" -Q "SELECT 1" -No
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - tickets_network
+
+  # ─── Laravel Backend ─────────────────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tickets_backend
+    environment:
+      APP_NAME: "TicketsAPI"
+      APP_ENV: "local"
+      APP_DEBUG: "true"
+      APP_URL: "http://localhost:8000"
+      APP_KEY: "base64:Sm6YALz9DReT2+cPcB0ZIGougOz4ch7qiIfw4rq0uA4="
+      DB_CONNECTION: "sqlsrv"
+      DB_HOST: "sqlserver"
+      DB_PORT: "1433"
+      DB_DATABASE: "tickets_db"
+      DB_USERNAME: "sa"
+      DB_PASSWORD: "YourStrong@Passw0rd"
+      CACHE_DRIVER: "file"
+      QUEUE_CONNECTION: "sync"
+      SESSION_DRIVER: "file"
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/var/www/html
+      - backend_vendor:/var/www/html/vendor
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - tickets_network
+
+  # ─── Node.js Stats Service ───────────────────────────────────────────────────
+  stats-service:
+    build:
+      context: ./stats-service
+      dockerfile: Dockerfile
+    container_name: tickets_stats
+    command: npm run dev
+    environment:
+      PORT:        "3001"
+      DB_HOST:     "sqlserver"
+      DB_PORT:     "1433"
+      DB_DATABASE: "tickets_db"
+      DB_USERNAME: "sa"
+      DB_PASSWORD: "YourStrong@Passw0rd"
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./stats-service:/app
+      - stats_node_modules:/app/node_modules
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - tickets_network
+
+  # ─── React Frontend (Vite dev server with HMR) ───────────────────────────────
+  frontend-react:
+    image: node:lts-alpine
+    container_name: tickets_frontend_react
+    working_dir: /app
+    command: sh -c "npm install && npm run dev"
+    environment:
+      VITE_API_TARGET: "http://backend:8000"
+    ports:
+      - "3002:5173"
+    volumes:
+      - ./frontend-react:/app
+      - frontend_react_node_modules:/app/node_modules
+    depends_on:
+      - backend
+    networks:
+      - tickets_network
+
+  # ─── Vanilla JS Frontend (nginx) ─────────────────────────────────────────────
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: tickets_frontend
+    ports:
+      - "3000:80"
+    volumes:                                                                                                                                                                                 
+      - ./frontend:/usr/share/nginx/html
+    depends_on:
+      - backend
+    networks:
+      - tickets_network
+
+volumes:
+  sqlserver_data:
+  backend_vendor:
+  stats_node_modules:
+  frontend_react_node_modules:
+
+networks:
+  tickets_network:
+    driver: bridge

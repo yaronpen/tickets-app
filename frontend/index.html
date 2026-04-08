@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>מערכת ניהול פניות</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <!-- ── Header ──────────────────────────────────────────────────────────────── -->
+  <header class="header">
+    <div class="header-inner">
+      <h1 class="logo">🎫 מערכת פניות</h1>
+      <button class="btn btn-primary" id="btnOpenCreateModal">+ פנייה חדשה</button>
+    </div>
+  </header>
+
+  <!-- ── Filters bar ─────────────────────────────────────────────────────────── -->
+  <section class="filters-bar">
+    <div class="filters-inner">
+      <div class="filter-group">
+        <label for="filterStatus">סטטוס</label>
+        <select id="filterStatus">
+          <option value="">הכל</option>
+          <option value="open">פתוח</option>
+          <option value="in_progress">בטיפול</option>
+          <option value="closed">סגור</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterPriority">עדיפות</label>
+        <select id="filterPriority">
+          <option value="">הכל</option>
+          <option value="high">גבוהה</option>
+          <option value="medium">בינונית</option>
+          <option value="low">נמוכה</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="filterUser">משתמש</label>
+        <select id="filterUser">
+          <option value="">הכל</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="sortBy">מיון לפי</label>
+        <select id="sortBy">
+          <option value="created_at">תאריך יצירה</option>
+          <option value="priority">עדיפות</option>
+          <option value="updated_at">עדכון אחרון</option>
+        </select>
+      </div>
+      <div class="filter-group">
+        <label for="sortDir">כיוון</label>
+        <select id="sortDir">
+          <option value="desc">יורד</option>
+          <option value="asc">עולה</option>
+        </select>
+      </div>
+      <button class="btn btn-secondary" id="btnApplyFilters">🔍 סנן</button>
+      <button class="btn btn-ghost"    id="btnResetFilters">↺ אפס</button>
+    </div>
+  </section>
+
+  <!-- ── Stats strip ─────────────────────────────────────────────────────────── -->
+  <section class="stats-strip" id="statsStrip">
+    <div class="stat-card" id="statTotal">  <span class="stat-num">–</span><span class="stat-label">סה"כ פניות</span></div>
+    <div class="stat-card open">   <span class="stat-num" id="statOpen">–</span><span class="stat-label">פתוחות</span></div>
+    <div class="stat-card progress"><span class="stat-num" id="statProgress">–</span><span class="stat-label">בטיפול</span></div>
+    <div class="stat-card closed"> <span class="stat-num" id="statClosed">–</span><span class="stat-label">סגורות</span></div>
+    <div class="stat-card high">   <span class="stat-num" id="statHigh">–</span><span class="stat-label">עדיפות גבוהה</span></div>
+  </section>
+
+  <!-- ── Ticket list ──────────────────────────────────────────────────────────── -->
+  <main class="main-content">
+    <div id="ticketGrid" class="ticket-grid">
+      <div class="loading-state">⏳ טוען פניות...</div>
+    </div>
+    <div class="pagination" id="pagination"></div>
+  </main>
+
+  <!-- ── Toast ───────────────────────────────────────────────────────────────── -->
+  <div id="toast" class="toast hidden"></div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       CREATE / EDIT MODAL
+  ══════════════════════════════════════════════════════════════════════════════ -->
+  <div id="ticketModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal">
+      <button class="modal-close" id="btnCloseModal" aria-label="סגור">✕</button>
+      <h2 class="modal-title" id="modalTitle">יצירת פנייה חדשה</h2>
+
+      <div class="form-group">
+        <label for="fTitle">כותרת <span class="required">*</span></label>
+        <input type="text" id="fTitle" placeholder="תיאור קצר של הבעיה" />
+      </div>
+      <div class="form-group">
+        <label for="fDescription">תיאור</label>
+        <textarea id="fDescription" rows="4" placeholder="פרטים נוספים..."></textarea>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="fStatus">סטטוס</label>
+          <select id="fStatus">
+            <option value="open">פתוח</option>
+            <option value="in_progress">בטיפול</option>
+            <option value="closed">סגור</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="fPriority">עדיפות</label>
+          <select id="fPriority">
+            <option value="low">נמוכה</option>
+            <option value="medium" selected>בינונית</option>
+            <option value="high">גבוהה</option>
+          </select>
+        </div>
+      </div>
+      <div class="form-group">
+        <label for="fAssignedUser">משויך למשתמש</label>
+        <select id="fAssignedUser">
+          <option value="">ללא שיוך</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost"    id="btnCancelModal">ביטול</button>
+        <button class="btn btn-primary"  id="btnSaveTicket">שמור</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════════════════════════════════════════════════════
+       STATUS-CHANGE MODAL
+  ══════════════════════════════════════════════════════════════════════════════ -->
+  <div id="statusModal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal modal-sm">
+      <button class="modal-close" id="btnCloseStatusModal" aria-label="סגור">✕</button>
+      <h2 class="modal-title">שינוי סטטוס</h2>
+      <p id="statusModalSubtitle" class="modal-subtitle"></p>
+      <div class="form-group">
+        <label for="sNewStatus">סטטוס חדש</label>
+        <select id="sNewStatus">
+          <option value="open">פתוח</option>
+          <option value="in_progress">בטיפול</option>
+          <option value="closed">סגור</option>
+        </select>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost"   id="btnCancelStatusModal">ביטול</button>
+        <button class="btn btn-primary" id="btnConfirmStatus">אשר</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="app.js"></script>
+</body>
+</html>
