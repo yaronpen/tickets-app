@@ -30,6 +30,47 @@ tickets-app/
 
 ---
 
+## 🏗️ Backend Architecture
+
+The backend is a **Laravel 13 REST API** following a service-layer pattern with clear separation between HTTP handling, business logic, and data access.
+
+### Folder structure
+
+```
+backend/app/
+├── Http/
+│   ├── Controllers/API/
+│   │   ├── TicketController.php   # CRUD + status/assign actions
+│   │   └── UserController.php     # List users, get user with tickets
+│   └── Requests/
+│       ├── CreateTicketRequest.php
+│       ├── UpdateTicketRequest.php
+│       ├── GetTicketRequest.php    # Query param validation (filters, sort, pagination)
+│       ├── ChangeStatusRequest.php
+│       └── AssignUserRequest.php
+├── Models/
+│   ├── Ticket.php                 # Status/priority constants, canBeClosed(), staleHighPriority() scope
+│   └── User.php                   # hasMany(Ticket) relationship
+├── Services/
+│   └── TicketService.php          # All ticket business logic
+└── Console/Commands/
+    └── ResetHighPriorityTickets.php  # Artisan command — run by the daily scheduler
+```
+
+### Key patterns
+
+**Service layer** — Controllers stay thin. All business logic (filtering, pagination, status rules, stale detection) lives in `TicketService`.
+
+**Form Requests** — Every endpoint has a dedicated `FormRequest` class that handles validation before the controller is reached. Controllers never manually validate input.
+
+**Database schema** — Two tables (`users`, `tickets`) with a nullable FK (`assigned_user_id` → `users.id`, cascades to null on user delete). CHECK constraints on `status` and `priority` are enforced at the DB level. A composite index on `(priority, status, updated_at)` supports stale-ticket queries efficiently.
+
+### What was intentionally omitted
+
+**API Resources** and **Repositories** were not used in this project. For a focused two-model CRUD API this felt like unnecessary abstraction - but I'm aware that in a production codebase JSON responses should be structured through Resource classes, and queries should be extracted into Repository classes to keep the service layer decoupled from Eloquent.
+
+---
+
 ## 🚀 Setup & Running
 
 ### Prerequisites
